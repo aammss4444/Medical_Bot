@@ -1,10 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
+from sqlalchemy.orm import Session
+from database import SessionLocal, engine
+import models
 
 load_dotenv()
 
@@ -13,6 +16,8 @@ API_KEY = os.getenv("API_KEY")
 genai.configure(api_key=API_KEY)
 
 model = genai.GenerativeModel("gemini-2.5-flash")
+
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -27,8 +32,27 @@ app.add_middleware(
 class Message(BaseModel):
     message: str
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 @app.post("/chat")
-async def chat(msg: Message):
+async def chat(msg: Message, db: Session = Depends(get_db)):
+    # Save User message
+    user_msg = models.Conversation(role="User", content=msg.message)
+    db.add(user_msg)
+    db.commit()
+
+    # Retrieve recent history (limiting to last 20 messages to fit token limits)
+    history = db.query(models.Conversation).order_by(models.Conversation.created_at.desc()).limit(20).all()
+    # Reverse to chronological order
+    history = history[::-1]
+    
+    # Format history for the prompt
+    history_text = "\n".join([f"{entry.role}: {entry.content}" for entry in history])
 
     prompt = f""" 
     You are a helpful medical assistant. 
@@ -41,12 +65,23 @@ async def chat(msg: Message):
         - possible causes
         - recommended actions
         - next steps
+    
+    Conversation History:
+    {history_text}
+
     User Symptoms: {msg.message}
     """
 
     try:
         response = model.generate_content(prompt)
-        return {"reply": response.text}
+        bot_reply = response.text
+        
+        # Save Bot response
+        bot_msg = models.Conversation(role="Medical Assistant", content=bot_reply)
+        db.add(bot_msg)
+        db.commit()
+        
+        return {"reply": bot_reply}
     except Exception as e:
         return {"reply": f"Error: {str(e)}"}
 
