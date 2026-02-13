@@ -4,63 +4,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediBot - AI Medical Assistant</title>
+    <title>Medical Aid</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=plus+jakarta+sans:wght@400;500;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
-    <div class="app-container">
-        <header class="chat-header">
-            <div class="logo-area">
-                <div class="logo-icon">
-                    <i class="fa-solid fa-staff-snake"></i>
-                </div>
-                <div class="logo-text">
-                    <h1>MediBot</h1>
-                    <span class="status-badge">Online</span>
-                </div>
-            </div>
-            <div class="header-actions">
-                <button class="icon-btn" title="Clear Chat" id="clear-btn">
-                    <i class="fa-solid fa-trash-can"></i>
-                </button>
-                <button class="icon-btn" title="Logout" id="logout-btn">
-                    <i class="fa-solid fa-sign-out-alt"></i>
-                </button>
-            </div>
-        </header>
+    <!-- Mobile Menu -->
+    <button id="mobile-menu-btn"
+        style="position: absolute; top: 10px; left: 10px; z-index: 100; background: none; border: none; font-size: 24px; display: none;">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+    <script>if (window.innerWidth <= 768) document.getElementById('mobile-menu-btn').style.display = 'block';</script>
 
-        <main class="chat-area" id="chat-container">
-            <div class="message ai-message welcome-message">
-                <div class="avatar">
-                    <i class="fa-solid fa-user-doctor"></i>
-                </div>
-                <div class="message-content">
-                    <p>Hello! I'm MediBot, your AI medical assistant. I can help analyze symptoms and provide general
-                        medical information.</p>
-                    <p class="disclaimer"><i class="fa-solid fa-triangle-exclamation"></i> <strong>Disclaimer:</strong>
-                        I am an AI, not a doctor. For serious conditions, please see a professional immediately.</p>
-                </div>
-            </div>
-        </main>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2
+                style="margin-bottom: 16px; font-weight: 600; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-notes-medical" style="color: #ef4444;"></i> Medical Aid
+            </h2>
+            <button class="new-chat-btn" id="new-chat-btn">
+                <i class="fa-solid fa-plus"></i>
+                New Chat
+            </button>
+        </div>
 
-        <footer class="input-area">
-            <form id="chat-form">
+        <div class="session-list" id="session-list">
+            <!-- Sessions -->
+        </div>
+
+        <div class="user-profile">
+            <div class="user-profile-btn">
+                <i class="fa-solid fa-user" style="width: 20px;"></i>
+                <span id="user-email-display">User</span>
+                <i class="fa-solid fa-ellipsis" style="margin-left: auto;"></i>
+            </div>
+            <div class="logout-container">
+                <button id="logout-btn">
+                    <i class="fa-solid fa-power-off"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="chat-container" id="chat-container">
+            <!-- Messages -->
+        </div>
+
+        <div class="input-area">
+            <form id="chat-form" style="width:100%; display:flex; justify-content:center;">
                 <div class="input-wrapper">
-                    <textarea id="user-input" placeholder="Describe your symptoms..." rows="1" required></textarea>
+                    <textarea id="user-input" placeholder="Type your message..." rows="1" required></textarea>
                     <button type="submit" id="send-btn" disabled>
                         <i class="fa-solid fa-paper-plane"></i>
                     </button>
                 </div>
             </form>
-        </footer>
-    </div>
-    <div class="background-glob"></div>
+        </div>
+    </main>
+
     <script src="app.js"></script>
 </body>
 

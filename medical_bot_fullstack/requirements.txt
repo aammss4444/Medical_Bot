@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+python-jose[cryptography]
+passlib[bcrypt]
+google-generativeai
+python-dotenv
+pydantic
+psycopg2-binary # Optional for PostgreSQL

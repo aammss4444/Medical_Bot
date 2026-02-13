@@ -95,20 +95,86 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     access_token = auth.create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
+@app.post("/sessions", status_code=status.HTTP_201_CREATED)
+def create_session(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    new_session = models.ChatSession(owner=current_user)
+    db.add(new_session)
+    db.commit()
+    db.refresh(new_session)
+    return {"id": new_session.id, "title": new_session.title, "created_at": new_session.created_at}
+
+@app.get("/sessions")
+def get_sessions(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    sessions = db.query(models.ChatSession).filter(models.ChatSession.user_id == current_user.id).order_by(models.ChatSession.created_at.desc()).all()
+    # Return formatted date or just let frontend handle
+    return [{"id": s.id, "title": s.title, "created_at": s.created_at} for s in sessions]
+
+@app.get("/sessions/{session_id}/messages")
+def get_session_messages(session_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    session = db.query(models.ChatSession).filter(models.ChatSession.id == session_id, models.ChatSession.user_id == current_user.id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    messages = db.query(models.Conversation).filter(models.Conversation.session_id == session_id).order_by(models.Conversation.created_at.asc()).all()
+    return [{"role": m.role, "content": m.content} for m in messages]
+
+class ChatRequest(BaseModel):
+    message: str
+    session_id: int
+
 @app.post("/chat")
-async def chat(msg: Message, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+async def chat(request: ChatRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    session = db.query(models.ChatSession).filter(models.ChatSession.id == request.session_id, models.ChatSession.user_id == current_user.id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    # Update title if it's the first message (or generic title)
+    if session.title == "New Chat":
+        new_title = request.message[:30] + "..." if len(request.message) > 30 else request.message
+        session.title = new_title
+        db.add(session)
+
     # Save User message
-    user_msg = models.Conversation(role="User", content=msg.message, owner=current_user)
+    user_msg = models.Conversation(role="User", content=request.message, session=session, owner=current_user)
     db.add(user_msg)
     db.commit()
 
-    # Retrieve recent history for THIS user
-    history = db.query(models.Conversation).filter(models.Conversation.user_id == current_user.id).order_by(models.Conversation.created_at.desc()).limit(20).all()
-    # Reverse to chronological order
+    # Retrieve local history for context from DB
+    history = db.query(models.Conversation).filter(models.Conversation.session_id == session.id).order_by(models.Conversation.created_at.desc()).limit(20).all()
     history = history[::-1]
     
-    # Format history for the prompt
     history_text = "\n".join([f"{entry.role}: {entry.content}" for entry in history])
+
+    prompt = f""" 
+    You are a helpful medical assistant. 
+    1. Please provide accurate and concise medical information.
+    2. If serious medical condition is suspected, please provide a referral to a medical professional.
+    3. Do not provide any personal information.
+    4. Do not prescribe any medicines.
+    5. Provide structured response.
+        - symptoms
+        - possible causes
+        - recommended actions
+        - next steps
+    
+    Conversation History:
+    {history_text}
+
+    User Symptoms: {request.message}
+    """
+
+    try:
+        response = model.generate_content(prompt)
+        bot_reply = response.text
+        
+        # Save Bot response
+        bot_msg = models.Conversation(role="Medical Assistant", content=bot_reply, session=session, owner=current_user)
+        db.add(bot_msg)
+        db.commit()
+        
+        return {"reply": bot_reply, "title": session.title}
+    except Exception as e:
+        return {"reply": f"Error: {str(e)}"}
 
     prompt = f""" 
     You are a helpful medical assistant. 
