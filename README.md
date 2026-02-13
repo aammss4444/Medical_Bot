@@ -101,5 +101,15 @@ Conversation<br>
 user_id: Integer, ForeignKey("users.id")<br>
 owner: Relationship to User<br>
 
+**Authentication Flow**
+
+<img width="761" height="540" alt="image" src="https://github.com/user-attachments/assets/aea7d40c-44ed-4b68-92f1-ab045c63bf3f" />
+
+**Protected Chat Flow**
+
+<img width="734" height="380" alt="image" src="https://github.com/user-attachments/assets/16c2b385-e73e-4e2e-8783-8827ad444c69" />
+
+
+
 
 
