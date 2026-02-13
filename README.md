@@ -8,20 +8,30 @@ PostgreSQL Database<br>
 <br>
 Flow:
 
-User sends message from frontend
+1. User sends message from frontend
 
-Backend receives it
+2. Backend receives it
 
-Backend sends prompt to Gemini
+3. Backend sends prompt to Gemini
 
-Gemini returns response
+4. Gemini returns response
 
-Backend stores BOTH:
+5. Backend stores BOTH:
 
-user message
+6. user message
 
-bot response
+7. bot response
 
-Data saved in PostgreSQL
+8.Data saved in PostgreSQL
 
-Backend returns response to frontend
+9. Backend returns response to frontend
+
+
+🔁 How It Works Internally (Step-by-Step)
+1️⃣ User sends message
+
+Frontend:
+
+{
+  "message": "I have fever"
+}
