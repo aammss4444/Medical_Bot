@@ -1,8 +1,15 @@
+// Check authentication
+const token = localStorage.getItem('token');
+if (!token) {
+    window.location.href = 'login.html';
+}
+
 const chatContainer = document.getElementById('chat-container');
 const chatForm = document.getElementById('chat-form');
 const userInput = document.getElementById('user-input');
 const sendBtn = document.getElementById('send-btn');
 const clearBtn = document.getElementById('clear-btn');
+const logoutBtn = document.getElementById('logout-btn');
 
 // Auto-resize textarea
 userInput.addEventListener('input', function () {
@@ -30,8 +37,15 @@ clearBtn.addEventListener('click', () => {
     // Keep only the welcome message
     const welcome = document.querySelector('.welcome-message');
     chatContainer.innerHTML = '';
-    chatContainer.appendChild(welcome);
+    if (welcome) chatContainer.appendChild(welcome);
 });
+
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('token');
+        window.location.href = 'login.html';
+    });
+}
 
 async function handleSubmit() {
     const message = userInput.value.trim();
@@ -47,13 +61,21 @@ async function handleSubmit() {
     const loadingId = addLoading();
 
     try {
-        const response = await fetch('/chat', {
+        const response = await fetch('http://127.0.0.1:8001/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ message: message })
         });
+
+        if (response.status === 401) {
+            alert('Session expired. Please log in again.');
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+            return;
+        }
 
         const data = await response.json();
 
